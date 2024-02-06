@@ -1,0 +1,22 @@
+make IS_ZYNQ=1 USE_WERROR=0
+sudo make install
+
+scp hiredis.h async.h read.h sds.h alloc.h sockcompat.h ubuntu@ephcb2.local:/usr/local/include/hiredis
+
+scp adapters/*.h ubuntu@192.168.2.60:/usr/local/include/hiredis/adapters
+scp libhiredis.so ubuntu@192.168.2.60:/usr/local/include/hiredis
+sudo chmod 755 libhiredis.so
+sudo mv libhiredis.so /usr/local/lib/libhiredis.so.1.2.1-dev
+
+sudo ln -sf libhiredis.so.1.2.1-dev libhiredis.so && sudo ln -sf libhiredis.so.1.2.1-dev libhiredis.so.1
+
+scp libhiredis.a ubuntu@192.168.2.60:/usr/local/include/hiredis
+sudo mkdir-p /usr/local/lib
+sudo mv libhiredis.a /usr/local/lib/libhiredis.a
+mkdir -p /usr/local/lib/pkgconfig
+
+scp hiredis.pc ubuntu@192.168.2.60:/usr/local/include/hiredis
+sudo mv hiredis.pc /usr/local/lib/pkgconfig/hiredis.pc
+
+
+
