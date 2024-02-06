@@ -23,6 +23,13 @@ INSTALL_INCLUDE_PATH= $(DESTDIR)$(PREFIX)/$(INCLUDE_PATH)
 INSTALL_LIBRARY_PATH= $(DESTDIR)$(PREFIX)/$(LIBRARY_PATH)
 INSTALL_PKGCONF_PATH= $(INSTALL_LIBRARY_PATH)/$(PKGCONF_PATH)
 
+IS_ZYNQ?=0
+ADDCFLAGS = -mthumb -mfpu=neon -mcpu=cortex-a9 -mfloat-abi=hard -mfloat-abi=hard --sysroot=/home/petalinux-2020-1/Workspace/Microzed-petalinux/pfm/sysroots/cortexa9t2hf-neon-xilinx-linux-gnueabi -O2 -Wall -W -fPIC
+ADDCPPFLAGS = -mthumb -mfpu=neon -mcpu=cortex-a9 -mfloat-abi=hard -std=gnu++11 -mfloat-abi=hard --sysroot=/home/petalinux-2020-1/Workspace/Microzed-petalinux/pfm/sysroots/cortexa9t2hf-neon-xilinx-linux-gnueabi -O3 -O2 -std=gnu++11 -Wall -W -fPIC
+INCPATH = -I. -I/home/petalinux-2020-1/Workspace/Microzed-petalinux/pfm/sysroots/cortexa9t2hf-neon-xilinx-linux-gnueabi/usr/include -I/home/petalinux-2020-1/Workspace/Microzed-petalinux/pfm/sysroots/cortexa9t2hf-neon-xilinx-linux-gnueabi/usr/include/c++/9 -I/home/petalinux-2020-1/Workspace/Microzed-petalinux/pfm/sysroots/cortexa9t2hf-neon-xilinx-linux-gnueabi/usr/include/arm-linux-gnueabihf -I/home/petalinux-2020-1/Workspace/Microzed-petalinux/pfm/sysroots/cortexa9t2hf-neon-xilinx-linux-gnueabi/usr/include/arm-linux-gnueabihf/c++/9 -I/home/petalinux-2020-1/qt-hcb2-lite/qt5/mkspecs/devices/linux-arm-xilinx-zynq-g++
+LFLAGS = -mfloat-abi=hard --sysroot=/home/petalinux-2020-1/Workspace/Microzed-petalinux/pfm/sysroots/cortexa9t2hf-neon-xilinx-linux-gnueabi -Wl,-O1 -Wl,-rpath,/usr/local/qt5zynq/lib -Wl,-rpath-link,/home/petalinux-2020-1/Workspace/Microzed-petalinux/pfm/sysroots/cortexa9t2hf-neon-xilinx-linux-gnueabi/lib -Wl,-rpath-link,/home/petalinux-2020-1/Workspace/Microzed-petalinux/pfm/sysroots/cortexa9t2hf-neon-xilinx-linux-gnueabi/lib/arm-linux-gnueabihf -Wl,-rpath-link,/home/petalinux-2020-1/Workspace/Microzed-petalinux/pfm/sysroots/cortexa9t2hf-neon-xilinx-linux-gnueabi/usr/lib -Wl,-rpath-link,/home/petalinux-2020-1/Workspace/Microzed-petalinux/pfm/sysroots/cortexa9t2hf-neon-xilinx-linux-gnueabi/usr/lib/arm-linux-gnueabihf -Wl,-rpath-link,/home/petalinux-2020-1/Workspace/Microzed-petalinux/pfm/sysroots/cortexa9t2hf-neon-xilinx-linux-gnueabi/usr/lib/gcc/arm-linux-gnueabihf/9
+LIBS = -L/home/petalinux-2020-1/Workspace/Microzed-petalinux/pfm/sysroots/cortexa9t2hf-neon-xilinx-linux-gnueabi/lib -L/home/petalinux-2020-1/Workspace/Microzed-petalinux/pfm/sysroots/cortexa9t2hf-neon-xilinx-linux-gnueabi/usr/lib -L/home/petalinux-2020-1/Workspace/Microzed-petalinux/pfm/sysroots/cortexa9t2hf-neon-xilinx-linux-gnueabi/usr/lib/arm-linux-gnueabihf -L/home/petalinux-2020-1/Workspace/Microzed-petalinux/pfm/sysroots/cortexa9t2hf-neon-xilinx-linux-gnueabi/usr/lib/gcc/arm-linux-gnueabihf/9 
+
 # redis-server configuration used for testing
 REDIS_PORT=56379
 REDIS_SERVER=redis-server
@@ -36,8 +43,13 @@ endef
 export REDIS_TEST_CONFIG
 
 # Fallback to gcc when $CC is not in $PATH.
+ifeq ($(IS_ZYNQ),1)
+CC            = /home/petalinux-2020-1/Workspace/Microzed-petalinux/pfm/sysroots/x86_64-petalinux-linux/usr/bin/arm-xilinx-linux-gnueabi/arm-xilinx-linux-gnueabi-gcc
+CXX           = /home/petalinux-2020-1/Workspace/Microzed-petalinux/pfm/sysroots/x86_64-petalinux-linux/usr/bin/arm-xilinx-linux-gnueabi/arm-xilinx-linux-gnueabi-g++
+else
 CC:=$(shell sh -c 'type $${CC%% *} >/dev/null 2>/dev/null && echo $(CC) || echo gcc')
 CXX:=$(shell sh -c 'type $${CXX%% *} >/dev/null 2>/dev/null && echo $(CXX) || echo g++')
+endif
 OPTIMIZATION?=-O3
 WARNINGS=-Wall -Wextra -Wstrict-prototypes -Wwrite-strings -Wno-missing-field-initializers
 USE_WERROR?=1
@@ -45,8 +57,15 @@ ifeq ($(USE_WERROR),1)
   WARNINGS+=-Werror
 endif
 DEBUG_FLAGS?= -g -ggdb
+
+ifeq ($(IS_ZYNQ),1)
+REAL_CFLAGS=$(OPTIMIZATION) -fPIC $(CPPFLAGS) $(ADDCPPFLAGS) $(CFLAGS) $(ADDCFLAGS) $(WARNINGS) $(DEBUG_FLAGS) $(PLATFORM_FLAGS) $(INCPATH)
+REAL_LDFLAGS=$(LDFLAGS) $(LFLAGS) $(LIBS)
+else
 REAL_CFLAGS=$(OPTIMIZATION) -fPIC $(CPPFLAGS) $(CFLAGS) $(WARNINGS) $(DEBUG_FLAGS) $(PLATFORM_FLAGS)
 REAL_LDFLAGS=$(LDFLAGS)
+endif
+
 
 DYLIBSUFFIX=so
 STLIBSUFFIX=a
